@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+title: Section Analysis
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Maurício
+    family-names: Bonatte
+    email: mbonatte@ymail.com
+    orcid: 'https://orcid.org/0000-0002-7326-4862'
+repository-code: 'https://github.com/mbonatte/secan'
+abstract: >-
+  Section Analysis is a module that enables the modelling
+  and analysis of custom cross-sections. Section Analysis is
+  helpful for the evaluation of section properties and
+  nonlinear response.
+keywords:
+  - Reinforced concrete
+  - Beam cross-section analysis
+license: MIT
