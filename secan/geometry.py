@@ -272,13 +272,13 @@ class Tendon(Rebar):
         strain = e0 + k * (center - self.center_y)
         strain += self.initial_strain  #This still has to be tested
         stress = self.material.get_stress(strain)
-        graph.plot([0, stress], [self.center_y, self.center_y], color='r')
+        graph.plot([0, stress], [self.center_y, self.center_y], color='lime')
         self.set_x_plot(graph, abs(stress))
 
     def plot_strain(self, graph, e0, k, center):
         strain = e0 + k * (center - self.center_y)
         strain += self.initial_strain  #This still has to be tested
-        graph.plot([0, strain], [self.center_y, self.center_y], color='r')
+        graph.plot([0, strain], [self.center_y, self.center_y], color='lime')
         self.set_x_plot(graph, abs(strain))
 
     def plot_geometry(self, graph=None):
@@ -286,4 +286,4 @@ class Tendon(Rebar):
             fig, graph = plt.subplots(1, figsize=(10, 10))
         graph.add_patch(Circle((self.get_boundary()[0]),
                                self.diameter/2,
-                               color='green'))
+                               color='lime'))
