@@ -77,8 +77,11 @@ class Concrete(Material):  # According to NBR6118 and EN1992
         graph.plot(strain, stress)
 
 
-class Steel(Material):
-    def __init__(self, young=0, fy=0, ultimate_strain=10e-3):
+class SteelIdeal(Material):
+    def __init__(self,
+                 young=0,
+                 fy=0,
+                 ultimate_strain=10e-3):
         self.young = young
         self.fy = fy
         self.yeild_strain = self.fy / self.young
@@ -94,6 +97,50 @@ class Steel(Material):
         if (-self.yeild_strain <= strain <= self.yeild_strain):
             return self.young*strain
         elif (-self.ultimate_strain <= strain <= self.ultimate_strain):
+            return self.fy * strain/abs(strain)
+        else:
+            return 0
+
+    def plot(self, graph=None):
+        if graph is None:
+            fig, graph = plt.subplots(1, figsize=(10, 10))
+        strain = np.arange(-self.ultimate_strain,
+                           self.ultimate_strain,
+                           self.ultimate_strain/100)
+        stress = [self.get_stress(strain[i]) for i in range(len(strain))]
+        graph.set(xlabel='Strain')
+        graph.set(ylabel='Stress')
+        graph.set_title("Steel Driagram")
+        graph.grid()
+        graph.plot(strain, stress)
+        
+class SteelHardening(Material):
+    def __init__(self,
+                 young=0,
+                 fy=0,
+                 ft=0,
+                 ultimate_strain=10e-3):
+        self.young = young
+        self.fy = fy
+        self.ft = ft
+        self.yeild_strain = self.fy / self.young
+        self.ultimate_strain = ultimate_strain
+        self.hardening_stiffness = (ft - fy) / (ultimate_strain - self.yeild_strain)
+
+    def get_stiff(self, strain=0):
+        if (-self.yeild_strain <= strain <= self.yeild_strain):
+            return self.young
+        elif self.yeild_strain < strain < self.ultimate_strain:
+            return self.hardening_stiffness
+        else:
+            return 0
+
+    def get_stress(self, strain=0):
+        if (-self.yeild_strain <= strain <= self.yeild_strain):
+            return self.young*strain
+        elif self.yeild_strain < strain < self.ultimate_strain:
+            return self.fy + (strain - self.yeild_strain) * self.hardening_stiffness
+        elif (-self.ultimate_strain <= strain <= -self.yeild_strain):
             return self.fy * strain/abs(strain)
         else:
             return 0
