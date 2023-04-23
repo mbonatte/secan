@@ -176,6 +176,9 @@ class Section:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
         self.plot_stress(e0, k, ax1)
         self.plot_strain(e0, k, ax2)
+        print('Normal = ', self.get_normal_res(e0, k))
+        print('Moment = ', self.get_moment_res(e0, k))
+        
 
     def plot_stress(self, e0, k, graph=None):
         if graph is None:
