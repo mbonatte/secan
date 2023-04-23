@@ -217,6 +217,10 @@ class Section:
     def addSingleRebar(self, diameter, material, position):
         self.section.append(geometry.Rebar(diameter, material, position))
         self.set_centroid()
+        
+    def addSingleTendon(self, diameter, material, initial_strain, position):
+        self.section.append(geometry.Tendon(diameter, material, initial_strain, position))
+        self.set_centroid()
 
     def addLineRebar(self, diameter, material, spacing, position):
         x = (position[1][0] - position[0][0])
