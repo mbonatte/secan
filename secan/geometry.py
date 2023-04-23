@@ -246,3 +246,44 @@ class Rebar(Geometry):
         graph.add_patch(Circle((self.get_boundary()[0]),
                                self.diameter/2,
                                color='red'))
+
+class Tendon(Rebar):
+    def __init__(self, diameter, material, initial_strain,  position=(0, 0)):
+        super().__init__(diameter, material, position)
+        self.initial_strain = initial_strain
+
+    def get_normal_stress(self, strain=0):
+        strain += self.initial_strain  #This still has to be tested
+        return self.area * self.material.get_stress(strain)
+
+    def get_stiffness(self, e0, k, center):
+        strain = e0 + k * (center - self.center_y)
+        strain += self.initial_strain  #This still has to be tested
+        normal = self.area * self.material.get_stiff(strain)
+        dist = (center-self.center_y)
+        a00 = normal
+        a01 = normal * dist
+        a10 = a01
+        a11 = normal * dist**2
+        return np.array(([a00, a01],
+                         [a10, a11]))
+
+    def plot_stress(self, graph, e0, k, center):
+        strain = e0 + k * (center - self.center_y)
+        strain += self.initial_strain  #This still has to be tested
+        stress = self.material.get_stress(strain)
+        graph.plot([0, stress], [self.center_y, self.center_y], color='r')
+        self.set_x_plot(graph, abs(stress))
+
+    def plot_strain(self, graph, e0, k, center):
+        strain = e0 + k * (center - self.center_y)
+        strain += self.initial_strain  #This still has to be tested
+        graph.plot([0, strain], [self.center_y, self.center_y], color='r')
+        self.set_x_plot(graph, abs(strain))
+
+    def plot_geometry(self, graph=None):
+        if graph is None:
+            fig, graph = plt.subplots(1, figsize=(10, 10))
+        graph.add_patch(Circle((self.get_boundary()[0]),
+                               self.diameter/2,
+                               color='green'))
