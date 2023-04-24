@@ -98,10 +98,10 @@ class Section:
 
     def get_strain_base_top(self, f, inverted=False):
         if f <= 0.5:
-            eb = 10/1000
+            eb = 15/1000
             et = -2*3.5*f/1000
         elif f >= 0.5:
-            eb = -f*2e-2+2e-2
+            eb = -f*3e-2+3e-2
             et = -3.5/1000
         if inverted:
             (eb, et) = (et, eb)
