@@ -275,9 +275,9 @@ class Section:
         failure = [i/n_points for i in range(n_points+1)]
         height = self.get_section_height()
         bottom = self.get_section_boundary()[0][1]
+        nu = []
+        mu = []
         for i in range(2):
-            nu = []
-            mu = []
             for f in failure:
                 if(f < 1/3):
                     eb = 10/1000
