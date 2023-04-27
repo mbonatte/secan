@@ -147,6 +147,8 @@ class Rect_section(Geometry):
         h_discret = self.h_discret + bottom
 
         graph.plot(strain, h_discret, color='b')
+        if k > 0:
+            graph.plot([-3.5e-3,-3.5e-3], [bottom, top], color='gray', linestyle='dotted')
         graph.plot([0, strain[0]], [bottom, bottom], color='b')
         graph.plot([0, strain[-1]], [top, top], color='gray')
         self.set_x_plot(graph, abs(max(strain, key=abs)))
