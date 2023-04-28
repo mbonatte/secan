@@ -119,7 +119,7 @@ class SteelHardening(Material):
                  young=0,
                  fy=0,
                  ft=0,
-                 ultimate_strain=10e-3):
+                 ultimate_strain=35e-3):
         self.young = young
         self.fy = fy
         self.ft = ft
