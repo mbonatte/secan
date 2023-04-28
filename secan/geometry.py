@@ -250,16 +250,27 @@ class Rebar(Geometry):
                                color='red'))
 
 class Tendon(Rebar):
-    def __init__(self, diameter, material, initial_strain,  position=(0, 0)):
+    def __init__(self,
+                 diameter,
+                 material,
+                 initial_strain,
+                 position=(0, 0),
+                 strain_ULS=10e-3 # Ultimate Limite State
+                ):
         super().__init__(diameter, material, position)
         self.initial_strain = initial_strain
+        self.strain_ULS = strain_ULS
 
     def get_normal_stress(self, strain=0):
+        if strain > self.initial_strain + self.strain_ULS:
+            return 0
         strain += self.initial_strain  #This still has to be tested
         return self.area * self.material.get_stress(strain)
 
     def get_stiffness(self, e0, k, center):
         strain = e0 + k * (center - self.center_y)
+        if strain > self.initial_strain + self.strain_ULS:
+            return 0
         strain += self.initial_strain  #This still has to be tested
         normal = self.area * self.material.get_stiff(strain)
         dist = (center-self.center_y)
