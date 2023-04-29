@@ -108,22 +108,31 @@ class Section:
         return eb, et
 
     def get_max_moment(self, n_points=5, inverted=False):
-        height = self.get_section_height()
+        height = self.get_section_boundary()[1][1]
         bottom = self.get_section_boundary()[0][1]
-        initial, final = 0, 1
-        for j in range(5):
-            failure = np.linspace(initial, final, n_points)
-            for i in range(n_points):
-                eb, et = self.get_strain_base_top(failure[i], inverted)
-                k = (eb-et)/height
-                e0 = (eb - k * (self.centroid[1]-bottom))
-                normal = self.get_normal_res(e0, k)
-                if normal < 0:
-                    final = failure[i]
-                    initial = failure[i-1]
-                    break
-        moment = self.get_moment_res(e0, k)
-        return moment
+
+        et, eb = -3.5e-3, 15e-3
+        k_min = 0
+        k_max = (eb-et)/(height-bottom)
+
+        max_moment = 0
+        e0_start = 0
+
+        for j in range(n_points):
+          diff = k_max - k_min
+          k = k_min + (diff / 2)
+          e0 = self.get_e0(k, e0_start)
+          moment = self.get_moment_res(e0, k)
+          if moment > max_moment:
+              if abs(max_moment-moment)/max_moment < 1e-5:
+                  max_moment = moment
+                  break
+              max_moment = moment
+              k_min = k
+              e0_start = e0
+          else:
+              k_max = k
+        return max_moment
 
     def get_max_moment_simplified(self):
         Rst = 0
