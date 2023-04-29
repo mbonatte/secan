@@ -121,8 +121,11 @@ class Section:
         for j in range(n_points):
           diff = k_max - k_min
           k = k_min + (diff / 2)
-          e0 = self.get_e0(k, e0_start)
-          moment = self.get_moment_res(e0, k)
+          try:
+              e0 = self.get_e0(k, e0_start)
+              moment = self.get_moment_res(e0, k)
+          except ZeroDivisionError:
+                moment = 0
           if moment > max_moment:
               if abs(max_moment-moment)/max_moment < 1e-5:
                   max_moment = moment
