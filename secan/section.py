@@ -111,12 +111,13 @@ class Section:
         height = self.get_section_boundary()[1][1]
         bottom = self.get_section_boundary()[0][1]
 
-        et, eb = -3.5e-3, 15e-3
-        k_min = 0
+        et, eb = -4e-3, 15e-3
         k_max = (eb-et)/(height-bottom)
-
-        max_moment = 0
-        e0_start = 0
+        
+        k, m = self.get_moment_curvature(k_max, normal_force=0, n_points=5)
+        max_moment = max(m)
+        index = m.index(max_moment)
+        k_min = k[index]
 
         for j in range(n_points):
           diff = k_max - k_min
