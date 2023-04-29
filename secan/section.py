@@ -118,7 +118,8 @@ class Section:
         max_moment = max(m)
         index = m.index(max_moment)
         k_min = k[index]
-
+        
+        e0_start = 0
         for j in range(n_points):
           diff = k_max - k_min
           k = k_min + (diff / 2)
