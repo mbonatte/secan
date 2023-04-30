@@ -113,13 +113,19 @@ class Section:
 
         et, eb = -4e-3, 15e-3
         k_max = (eb-et)/(height-bottom)
+        if inverted:
+            k_max = -1 * k_max
         
         k, m = self.get_moment_curvature(k_max, normal_force=0, n_points=5)
         max_moment = max(m)
+        if inverted:
+            max_moment = min(m)
         index = m.index(max_moment)
         k_min = k[index]
         
         e0_start = 0.1*(10e-3 - k_min * (self.centroid[1]-bottom)) #Uma tentativa muito louca de fazer convergir. Preciso ver isso melhor depois.
+        if inverted:
+            e0_start = -1 * e0_start
         try:
             e0_start = self.get_e0(k_min, e0_start)
         except ZeroDivisionError:
@@ -133,7 +139,7 @@ class Section:
               moment = self.get_moment_res(e0, k)
           except ZeroDivisionError:
                 moment = 0
-          if moment > max_moment:
+          if abs(moment) > abs(max_moment):
               if abs(max_moment-moment) < error:
                   max_moment = moment
                   break
