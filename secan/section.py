@@ -120,7 +120,10 @@ class Section:
         k_min = k[index]
         
         e0_start = 0.1*(10e-3 - k_min * (self.centroid[1]-bottom)) #Uma tentativa muito louca de fazer convergir. Preciso ver isso melhor depois.
-        e0_start = self.get_e0(k_min, e0_start)
+        try:
+            e0_start = self.get_e0(k_min, e0_start)
+        except ZeroDivisionError:
+             e0_start = 0
         
         for j in range(n_points):
           diff = k_max - k_min
