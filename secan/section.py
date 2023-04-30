@@ -107,7 +107,7 @@ class Section:
             (eb, et) = (et, eb)
         return eb, et
 
-    def get_max_moment(self, n_points=50, inverted=False):
+    def get_max_moment(self, n_points=50, inverted=False, error=1e3):
         height = self.get_section_boundary()[1][1]
         bottom = self.get_section_boundary()[0][1]
 
@@ -129,7 +129,7 @@ class Section:
           except ZeroDivisionError:
                 moment = 0
           if moment > max_moment:
-              if abs(max_moment-moment)/max_moment < 1e-5:
+              if abs(max_moment-moment) < error:
                   max_moment = moment
                   break
               max_moment = moment
