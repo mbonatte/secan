@@ -4,12 +4,13 @@ from abc import ABC, abstractmethod
 
 
 class Material(ABC):
+
     @abstractmethod
-    def get_stiff(self):
+    def get_stiff(self, strain: float) -> float:
         pass
 
     @abstractmethod
-    def get_stress(self):
+    def get_stress(self, strain: float) -> float:
         pass
 
     def plot(self, plot=None):
@@ -30,39 +31,35 @@ class Linear(Material):
 class Concrete(Material):  # According to NBR6118 and EN1992
     def __init__(self, fc=0):
         self.fc = fc
+        self.ec2, self.ecu, self.n = self._get_constants(fc)
+            
+    @staticmethod
+    def _get_constants(fc: float) -> tuple[float, float, float]:
         if 10e6 <= fc < 55e6:
-            self.ec2 = -2 / 1e3
-            self.ecu = -3.5 / 1e3
-            self.n = 2
+            return -2 / 1e3, -3.5 / 1e3, 2
         elif 55e6 <= fc <= 90e6:
-            self.ec2 = -1*((2/1e3)
-                           + (0.085/1e3
-                              * (fc/1e6 - 50)**0.53))
-            self.ecu = -1*((2.6/1e3)
-                           + (35/1e3
-                              * ((90-fc/1e6)/100)**4))
-            self.n = 1.4+23.4*((90-fc/1e6)/100)**4
+            return (-1*((2/1e3) + (0.085/1e3 * (fc/1e6 - 50)**0.53)), 
+                    (-1*((2.6/1e3) + (35/1e3 * ((90-fc/1e6)/100)**4))),
+                    1.4+23.4*((90-fc/1e6)/100)**4)
         else:
             raise ValueError('fc must be between 20MPa and 90MPa')
 
-    def get_stiff(self, strain=0):
+    def get_stiff(self, strain: float=0) -> float:
         if (self.ec2 < strain <= 0):
-            return -1*(self.fc*self.n
-                       * (1-strain/self.ec2)**(self.n-1)
-                       / self.ec2)
+            return -1*(self.fc*self.n * (1-strain/self.ec2)**(self.n-1) / self.ec2)
         elif (strain <= self.ec2):
             return 0
-        elif (0 < strain):
+        else:
             return 0
 
-    def get_stress(self, strain=0):
+    def get_stress(self, strain: float=0) -> float:
         if (self.ec2 <= strain <= 0):
-            return -1*self.fc*(1-(1-strain/self.ec2)**self.n)
+            return -1*self.fc*(1-(1-strain/self.ec2)**self.n) 
         elif (self.ecu <= strain <= self.ec2):
             return -self.fc
         elif (strain <= self.ecu):
             return 0
-        elif (0 < strain):
+        else:
             return 0
 
     def plot(self, graph=None):

@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -5,7 +6,8 @@ from . import geometry
 
 
 class Section:
-    def __init__(self, section=None):
+
+    def __init__(self, section: List[geometry.Geometry]=None):
         self.area_rebar = 0
         self.centroid_rebar = 0
         self.centroid = (0, 0)
@@ -13,20 +15,17 @@ class Section:
             self.section = []
         else:
             self.section = section
-            self.set_centroid()
+            self.centroid = self._compute_centroid()
 
-    def set_centroid(self):
-        self.centroid = (0, 0)
-        sum_area = 0
-        sum_moments_x = 0
-        sum_moments_y = 0
-        for section in self.section:
-            stiff = section.material.get_stiff()
-            area = section.get_area()
-            sum_area += stiff * area
-            sum_moments_x += stiff * area * (section.center_x-self.centroid[0])
-            sum_moments_y += stiff * area * (section.center_y-self.centroid[1])
-        self.centroid = (sum_moments_x/sum_area, sum_moments_y/sum_area)
+    def _compute_centroid(self) -> None:
+        areas = np.array([s.area for s in self.section])
+        stiffnesses = np.array([s.material.get_stiff() for s in self.section])
+        weighted_areas = areas * stiffnesses
+        
+        cx = np.sum(weighted_areas * [s.center[0] for s in self.section]) / np.sum(weighted_areas)
+        cy = np.sum(weighted_areas * [s.center[1] for s in self.section]) / np.sum(weighted_areas)
+    
+        self.centroid = np.array([cx, cy])
         self.set_rebar_centroid()
 
     def set_rebar_centroid(self):
@@ -34,67 +33,69 @@ class Section:
         sum_moments_y = 0
         for section in self.section:
             if isinstance(section, geometry.Rebar):
-                area = section.get_area()
+                area = section.area
                 self.area_rebar += area
-                sum_moments_y += area * section.center_y
+                sum_moments_y += area * section.center[1]
         if self.area_rebar > 0:
             self.centroid_rebar = sum_moments_y/self.area_rebar
 
-    def get_moment_res(self, e0, k):
-        return sum(s.get_moment_resistance(e0, k, self.centroid[1])
-                   for s in self.section)
+    def get_moment_res(self, e0: float, k: float) -> np.ndarray:
+        moments = np.array([s.get_moment_resistance(e0, k, self.centroid[1])
+                            for s in self.section])
+        return moments.sum()
 
-    def get_normal_res(self, e0, k):
-        return sum(s.get_normal_resistance(e0, k, self.centroid[1])
-                   for s in self.section)
+    def get_normal_res(self, e0: float, k: float) -> np.ndarray:
+        normal = np.array([s.get_normal_resistance(e0, k, self.centroid[1])
+                           for s in self.section])
+        return normal.sum()
 
-    def get_stiff(self, e0, k):
-        return sum(s.get_stiffness(e0, k, self.centroid[1])
-                   for s in self.section)
+    def get_stiff(self, e0: float, k: float) -> np.ndarray:
+        K = np.array([s.get_stiffness(e0, k, self.centroid[1]) for s in self.section])
+        return K.sum(axis=0)
+        
 
-    def get_e0(self, k=0, e0=0, normal_force=0):
-        normal_int = self.get_normal_res(e0, k)
-        normal_ext = normal_force
-        normal_dif = abs(abs(normal_ext)-abs(normal_int))
+    def get_e0(self, k=0, e0=0, target_normal=0):
         n_ite = 30
-        n = 0
-        while(normal_dif > 10 and n < n_ite):
+        
+        for _ in range(n_ite):
+            normal_int = self.get_normal_res(e0, k)
+            
+            residual = abs(abs(target_normal)-abs(normal_int))
+            if residual < 10:
+                return e0
+        
             stiff = self.get_stiff(e0, k)[0, 0]
             if stiff < 1e-10:
                 raise ZeroDivisionError
-            e0 += (normal_force - self.get_normal_res(e0, k))/stiff
-            normal_int = self.get_normal_res(e0, k)
-            normal_dif = abs(abs(normal_ext)-abs(normal_int))
-            n += 1
-        return e0
+            
+            e0 += (target_normal - self.get_normal_res(e0, k))/stiff
+        
+        return None
 
-    def check_section(self, normal, moment, n_ite=10):
-        norm, stiff_def = 10, 10
-        e0, k = 0, 0
-        n_int = self.get_normal_res(e0, k)
-        m_int = self.get_moment_res(e0, k)
-        n = 0
-        load_dif = np.array([[normal-n_int],
-                             [moment-m_int]])
-        stiff = self.get_stiff(e0, k)
-        while((norm > 0.01) and (stiff_def > 0.01) and (n < n_ite)):
-            inv_stiff = np.linalg.inv(stiff)
-            e0 += np.matmul(inv_stiff, load_dif)[0][0]
-            k += np.matmul(inv_stiff, load_dif)[1][0]
-            n_int = self.get_normal_res(e0, k)
-            m_int = self.get_moment_res(e0, k)
-            load_dif = np.array([[normal-n_int],
-                                 [moment-m_int]])
-            norm = np.linalg.norm(load_dif)
+    def check_section(self, target_normal, target_moment, n_ite=10):
+        TOLERANCE = 0.01
+        
+        e0 = 0
+        k = 0
+
+        for _ in range(n_ite):
+            normal = self.get_normal_res(e0, k)
+            moment = self.get_moment_res(e0, k)
+            
+            residual = np.array([[target_normal-normal],
+                                [target_moment-moment]])
+            if np.linalg.norm(residual) < TOLERANCE:
+                return e0, k
+            
             stiff = self.get_stiff(e0, k)
-            stiff_def = np.linalg.det(stiff)
-            n += 1
-        if (norm < 0.01):
-            print("e0: ", e0)
-            print("k: ", k)
-            return e0, k
-        else:
-            print ("Section is not stable")
+            if np.linalg.det(stiff) < TOLERANCE:
+                break
+
+            # update section state
+            inv_stiff = np.linalg.inv(stiff)
+            e0 += np.matmul(inv_stiff, residual )[0][0]
+            k += np.matmul(inv_stiff, residual )[1][0]
+        return None, None
 
     def get_strain_base_top(self, f, inverted=False):
         if f <= 0.5:
@@ -107,47 +108,53 @@ class Section:
             (eb, et) = (et, eb)
         return eb, et
 
-    def get_max_moment(self, n_points=50, inverted=False, error=1e3):
+    def get_max_moment(self, n_points=50, is_inverted=False, error=1e3):
         height = self.get_section_boundary()[1][1]
         bottom = self.get_section_boundary()[0][1]
-
         et, eb = -4e-3, 15e-3
-        k_max = (eb-et)/(height-bottom)
-        if inverted:
-            k_max = -1 * k_max
+        max_curvature = (eb - et) / (height - bottom)
         
-        k, m = self.get_moment_curvature(k_max, normal_force=0, n_points=5)
-        max_moment = max(m)
-        if inverted:
-            max_moment = min(m)
-        index = m.index(max_moment)
-        k_min = k[index]
+        if is_inverted:
+            max_curvature *= -1
+
+        curvatures, moments = self.get_moment_curvature(max_curvature, normal_force=0, n_points=5)
+                
+        max_moment = moments.max() if not is_inverted else moments.min()
+               
+        min_curvature = curvatures[moments.argmax()] 
         
-        e0_start = 0.1*(10e-3 - k_min * (self.centroid[1]-bottom)) #Uma tentativa muito louca de fazer convergir. Preciso ver isso melhor depois.
-        if inverted:
+        e0_start = 0.1*(10e-3 - min_curvature * (self.centroid[1]-bottom)) #Uma tentativa muito louca de fazer convergir. Preciso ver isso melhor depois.
+        
+        if is_inverted:
             e0_start = -1 * e0_start
+        
         try:
-            e0_start = self.get_e0(k_min, e0_start)
+            e0_start = self.get_e0(min_curvature, e0_start)
         except ZeroDivisionError:
              e0_start = 0
         
         for j in range(n_points):
-          diff = k_max - k_min
-          k = k_min + (diff / 2)
+          
+          curvature_range = max_curvature - min_curvature
+          curvature = min_curvature + (curvature_range / 2)
+          
           try:
-              e0 = self.get_e0(k, e0_start)
-              moment = self.get_moment_res(e0, k)
+              e0 = self.get_e0(curvature, e0_start)
+              moment = self.get_moment_res(e0, curvature)
           except ZeroDivisionError:
                 moment = 0
+          
+          # Update curvature bounds          
           if abs(moment) > abs(max_moment):
               if abs(max_moment-moment) < error:
                   max_moment = moment
                   break
               max_moment = moment
-              k_min = k
+              min_curvature = curvature
               e0_start = e0
           else:
-              k_max = k
+              max_curvature = curvature
+        
         return max_moment
 
     def get_max_moment_simplified(self):
@@ -171,8 +178,8 @@ class Section:
         return M
 
     def get_moment_curvature(self, k_max, normal_force=0, n_points=50):
-        k = [(k_max/n_points)*i for i in range(n_points)]
-        moment = [0 for i in k]
+        k = np.linspace(0, k_max, n_points)
+        moment = np.empty(n_points)
         e0 = 0
         for i in range(n_points):
             try:
@@ -244,11 +251,11 @@ class Section:
 
     def addSingleRebar(self, diameter, material, position):
         self.section.append(geometry.Rebar(diameter, material, position))
-        self.set_centroid()
+        self._compute_centroid()
         
     def addSingleTendon(self, diameter, material, initial_strain, position):
         self.section.append(geometry.Tendon(diameter, material, initial_strain, position))
-        self.set_centroid()
+        self._compute_centroid()
 
     def addLineRebar(self, diameter, material, spacing, position):
         x = (position[1][0] - position[0][0])
@@ -259,7 +266,7 @@ class Section:
             self.section.append(geometry.Rebar(diameter, material,
                                                [x*i/(nBars-1)+position[0][0],
                                                 y*i/(nBars-1)+position[0][1]]))
-        self.set_centroid()
+        self._compute_centroid()
 
     def addRebars(self, rebars):
         if (type(rebars) == list):
@@ -267,7 +274,7 @@ class Section:
                 self.section.append(rebar)
         else:
             self.section.append(rebars)
-        self.set_centroid()
+        self._compute_centroid()
 
     def get_section_boundary(self):
         x0 = 0
@@ -275,7 +282,7 @@ class Section:
         x1 = 0
         y1 = 0
         for section in self.section:
-            for bound in section.get_boundary():
+            for bound in section.boundary:
                 if bound[0] < x0:
                     x0 = bound[0]
                 if bound[0] > x1:
