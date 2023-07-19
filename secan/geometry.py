@@ -148,9 +148,9 @@ class RectSection(Geometry):
 
     def plot_stress(self, graph, e0, k, center):
         e0_sec = self.get_e0_sec(e0, k, center)
-        stress = self.get_stress(e0_sec, k)
-        #stress = [self.material.get_stress(strain[i])
-                  #for i in range(len(strain))]
+        strain = self.get_strains(e0_sec, k)
+        stress = [self.material.get_stress(strain[i])
+                  for i in range(len(strain))]
         bottom = self.center[1]-self.height/2
         top = self.center[1]+self.height/2
         h_discret = self.h_discret+bottom
@@ -255,7 +255,7 @@ class Rebar(Geometry):
     def plot_geometry(self, graph=None):
         if graph is None:
             fig, graph = plt.subplots(1, figsize=(10, 10))
-        graph.add_patch(Circle((self.get_boundary()[0]),
+        graph.add_patch(Circle((self.boundary[0]),
                                self.diameter/2,
                                color='red'))
 

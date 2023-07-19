@@ -222,7 +222,7 @@ class Section:
         ax2 = graph.twiny()
         ax2.set_xlabel("Rebar - Stress")
         for section in self.section:
-            if isinstance(section, geometry.Rect_section):
+            if isinstance(section, geometry.RectSection):
                 section.plot_stress(graph, e0, k, self.centroid[1])
             elif isinstance(section, geometry.Rebar):
                 section.plot_stress(ax2, e0, k, self.centroid[1])

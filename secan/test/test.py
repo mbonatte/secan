@@ -68,6 +68,9 @@ class TestSections(unittest.TestCase):
         moment = s.get_max_moment()
         self.assertAlmostEqual(moment, 165225.0934909246)
         
+        s.plot_stress_strain(0.0025, 0.00588)
+        s.plot_section()
+        
     def test_big_section(self):
         web_40x160_left = RectSection(width=0.4,
                                       height=1.60,
