@@ -307,6 +307,6 @@ class Tendon(Rebar):
     def plot_geometry(self, graph=None):
         if graph is None:
             fig, graph = plt.subplots(1, figsize=(10, 10))
-        graph.add_patch(Circle((self.get_boundary()[0]),
+        graph.add_patch(Circle((self.boundary[0]),
                                self.diameter/2,
                                color='lime'))
