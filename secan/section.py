@@ -54,9 +54,7 @@ class Section:
         return K.sum(axis=0)
         
 
-    def get_e0(self, k=0, e0=0, target_normal=0):
-        n_ite = 30
-        
+    def get_e0(self, k=0, e0=0, target_normal=0, max_increment=0.001, n_ite=30):
         for _ in range(n_ite):
             normal_int = self.get_normal_res(e0, k)
             
@@ -68,7 +66,9 @@ class Section:
             if stiff < 1e-10:
                 raise ZeroDivisionError
             
-            e0 += (target_normal - self.get_normal_res(e0, k))/stiff
+            increment = (target_normal - normal_int)/stiff
+            
+            e0 += np.sign(increment) * min(abs(increment), max_increment)
         
         return None
 
