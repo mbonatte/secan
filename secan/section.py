@@ -54,7 +54,7 @@ class Section:
         return K.sum(axis=0)
         
 
-    def get_e0(self, k=0, e0=0, target_normal=0, max_increment=0.001, n_ite=30):
+    def get_e0(self, k=0, e0=0, target_normal=0, max_increment_e0=0.0005, n_ite=30):
         for _ in range(n_ite):
             normal_int = self.get_normal_res(e0, k)
             
@@ -68,7 +68,7 @@ class Section:
             
             increment = (target_normal - normal_int)/stiff
             
-            e0 += np.sign(increment) * min(abs(increment), max_increment)
+            e0 += np.sign(increment) * min(abs(increment), max_increment_e0)
         
         return None
 
@@ -108,7 +108,7 @@ class Section:
             (eb, et) = (et, eb)
         return eb, et
 
-    def get_max_moment(self, n_points=50, is_inverted=False, error=1e3):
+    def get_max_moment(self, n_points=50, is_inverted=False, error=1e3, max_increment_e0=0.0005):
         height = self.get_section_boundary()[1][1]
         bottom = self.get_section_boundary()[0][1]
         et, eb = -4e-3, 15e-3
@@ -129,7 +129,7 @@ class Section:
             e0_start = -1 * e0_start
         
         try:
-            e0_start = self.get_e0(min_curvature, e0_start)
+            e0_start = self.get_e0(min_curvature, e0_start, max_increment_e0)
         except ZeroDivisionError:
              e0_start = 0
         
@@ -139,7 +139,7 @@ class Section:
           curvature = min_curvature + (curvature_range / 2)
           
           try:
-              e0 = self.get_e0(curvature, e0_start)
+              e0 = self.get_e0(curvature, e0_start, max_increment_e0)
               moment = self.get_moment_res(e0, curvature)
           except ZeroDivisionError:
                 moment = 0
