@@ -16,6 +16,12 @@ class Section:
         else:
             self.section = section
             self.centroid = self._compute_centroid()
+        
+        self.residual_e0 = 10
+        self.max_increment_e0 = 0.0005
+        self.n_ite_e0 = 30
+
+        self.tolerance_check_section = 0.01
 
     def _compute_centroid(self) -> None:
         areas = np.array([s.area for s in self.section])
@@ -54,12 +60,12 @@ class Section:
         return K.sum(axis=0)
         
 
-    def get_e0(self, k=0, e0=0, target_normal=0, max_increment_e0=0.0005, n_ite=30):
-        for _ in range(n_ite):
+    def get_e0(self, k=0, e0=0, target_normal=0):
+        for _ in range(self.n_ite_e0):
             normal_int = self.get_normal_res(e0, k)
             
             residual = abs(abs(target_normal)-abs(normal_int))
-            if residual < 10:
+            if residual < self.residual_e0:
                 return e0
         
             stiff = self.get_stiff(e0, k)[0, 0]
@@ -68,13 +74,11 @@ class Section:
             
             increment = (target_normal - normal_int)/stiff
             
-            e0 += np.sign(increment) * min(abs(increment), max_increment_e0)
+            e0 += np.sign(increment) * min(abs(increment), self.max_increment_e0)
         
         return None
 
     def check_section(self, target_normal, target_moment, n_ite=10):
-        TOLERANCE = 0.01
-        
         e0 = 0
         k = 0
 
@@ -84,11 +88,11 @@ class Section:
             
             residual = np.array([[target_normal-normal],
                                 [target_moment-moment]])
-            if np.linalg.norm(residual) < TOLERANCE:
+            if np.linalg.norm(residual) < self.tolerance_check_section:
                 return e0, k
             
             stiff = self.get_stiff(e0, k)
-            if np.linalg.det(stiff) < TOLERANCE:
+            if np.linalg.det(stiff) < self.tolerance_check_section:
                 break
 
             # update section state
@@ -108,7 +112,7 @@ class Section:
             (eb, et) = (et, eb)
         return eb, et
 
-    def get_max_moment(self, n_points=50, is_inverted=False, error=1e3, max_increment_e0=0.0005):
+    def get_max_moment(self, n_points=50, is_inverted=False, error=1e3):
         height = self.get_section_boundary()[1][1]
         bottom = self.get_section_boundary()[0][1]
         et, eb = -4e-3, 15e-3
@@ -130,7 +134,7 @@ class Section:
             e0_start = -1 * e0_start
         
         try:
-            e0_start = self.get_e0(min_curvature, e0_start, max_increment_e0)
+            e0_start = self.get_e0(min_curvature, e0_start)
         except ZeroDivisionError:
              e0_start = 0
         
@@ -140,7 +144,7 @@ class Section:
           curvature = min_curvature + (curvature_range / 2)
           
           try:
-              e0 = self.get_e0(curvature, e0_start, max_increment_e0)
+              e0 = self.get_e0(curvature, e0_start)
               moment = self.get_moment_res(e0, curvature)
           except ZeroDivisionError:
                 moment = 0
