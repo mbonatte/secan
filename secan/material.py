@@ -128,7 +128,7 @@ class SteelIdeal(Material):
         graph.grid()
         graph.plot(strain, stress)
         
-class SteelHardening(Material):
+class SteelHardening(SteelIdeal):
     def __init__(self,
                  young=0,
                  fy=0,
@@ -138,8 +138,6 @@ class SteelHardening(Material):
         self.fy = fy
         self.ultimate_strain = ultimate_strain
         self.ft = ft
-        
-        
         
     @property
     def ft(self):
