@@ -120,8 +120,9 @@ class Section:
         curvatures, moments = self.get_moment_curvature(max_curvature, normal_force=0, n_points=5)
                 
         max_moment = moments.max() if not is_inverted else moments.min()
+        index = moments.argmax() if not is_inverted else moments.argmin()
                
-        min_curvature = curvatures[moments.argmax()] 
+        min_curvature = curvatures[index] 
         
         e0_start = 0.1*(10e-3 - min_curvature * (self.centroid[1]-bottom)) #Uma tentativa muito louca de fazer convergir. Preciso ver isso melhor depois.
         
