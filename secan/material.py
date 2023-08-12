@@ -35,14 +35,14 @@ class Concrete(Material):  # According to NBR6118 and EN1992
                 
     @staticmethod
     def _get_constants(fc: float) -> tuple[float, float, float]:
-        if 10e6 <= fc < 55e6:
+        if 0e6 <= fc < 55e6:
             return -2 / 1e3, -3.5 / 1e3, 2
         elif 55e6 <= fc <= 90e6:
             return (-1*((2/1e3) + (0.085/1e3 * (fc/1e6 - 50)**0.53)), 
                     (-1*((2.6/1e3) + (35/1e3 * ((90-fc/1e6)/100)**4))),
                     1.4+23.4*((90-fc/1e6)/100)**4)
         else:
-            raise ValueError('fc must be between 20MPa and 90MPa')
+            raise ValueError('fc must be between 0MPa and 90MPa')
 
     @property
     def fc(self):
