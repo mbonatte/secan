@@ -31,8 +31,8 @@ class Linear(Material):
 class Concrete(Material):  # According to NBR6118 and EN1992
     def __init__(self, fc=0):
         self.fc = fc
-        self.ec2, self.ecu, self.n = self._get_constants(fc)
-            
+        
+                
     @staticmethod
     def _get_constants(fc: float) -> tuple[float, float, float]:
         if 10e6 <= fc < 55e6:
@@ -43,6 +43,15 @@ class Concrete(Material):  # According to NBR6118 and EN1992
                     1.4+23.4*((90-fc/1e6)/100)**4)
         else:
             raise ValueError('fc must be between 20MPa and 90MPa')
+
+    @property
+    def fc(self):
+        return self._fc   
+     
+    @fc.setter
+    def fc(self, new_fc):
+        self._fc = new_fc
+        self.ec2, self.ecu, self.n = self._get_constants(new_fc)
 
     def get_stiff(self, strain: float=0) -> float:
         if (self.ec2 < strain <= 0):
@@ -81,8 +90,16 @@ class SteelIdeal(Material):
                  ultimate_strain=10e-3):
         self.young = young
         self.fy = fy
-        self.yeild_strain = self.fy / self.young
         self.ultimate_strain = ultimate_strain
+        
+    @property
+    def fy(self):
+        return self._fy    
+     
+    @fy.setter
+    def fy(self, new_fy):
+        self._fy = new_fy
+        self.yeild_strain = new_fy / self.young
 
     def get_stiff(self, strain=0):
         if (-self.yeild_strain <= strain <= self.yeild_strain):
@@ -120,9 +137,17 @@ class SteelHardening(Material):
         self.young = young
         self.fy = fy
         self.ft = ft
-        self.yeild_strain = self.fy / self.young
         self.ultimate_strain = ultimate_strain
-        self.hardening_stiffness = (ft - fy) / (ultimate_strain - self.yeild_strain)
+        
+        
+    @property
+    def ft(self):
+        return self._ft   
+     
+    @ft.setter
+    def ft(self, new_ft):
+        self._ft = new_ft
+        self.hardening_stiffness = (new_ft - self.fy) / (self.ultimate_strain - self.yeild_strain)
 
     def get_stiff(self, strain=0):
         if (-self.yeild_strain <= strain <= self.yeild_strain):
