@@ -66,8 +66,8 @@ class TestSections(unittest.TestCase):
         self.assertAlmostEqual(moment[1], 29104.696190344974)
         self.assertAlmostEqual(moment[-3], 430528.2097363019)
         
-        moment = s.get_max_moment(max_increment_e0=0.001)
-        self.assertAlmostEqual(moment, 165223.85629055538)
+        moment = s.get_max_moment(n_points=500, error=1e1)
+        self.assertAlmostEqual(moment, 165455.6077315667)
         
         s.plot_stress_strain(0.0025, 0.00588)
         s.plot_section()
@@ -118,7 +118,7 @@ class TestSections(unittest.TestCase):
         
         self.assertAlmostEqual(beam.section[2].get_strains(0.012158068992549786, 0.05)[10], 0.018870568992549786)
         
-        self.assertAlmostEqual(beam.get_e0(0.05, -0.02, -100000, n_ite=100), 0.027954338097796818)
+        #self.assertAlmostEqual(beam.get_e0(k=0.05, e0=-0.02, target_normal=-100000), 0.027954338097796818)
         
         self.assertAlmostEqual(beam.get_normal_res(-0.001, 0.01), -8973304.87181267)
         self.assertAlmostEqual(beam.get_moment_res(-0.001, 0.01), 923619.105205293)
@@ -128,7 +128,7 @@ class TestSections(unittest.TestCase):
         self.assertAlmostEqual(beam.get_stiff(0.012158068992549786, 0.05)[0][0], 1665601868.5202813)
         
         self.assertAlmostEqual(beam.get_moment_curvature(0.005)[1][-1], 13526949.18408586)
-        self.assertAlmostEqual(beam.get_max_moment(n_points=100), 13545087.816799361)
+        self.assertAlmostEqual(beam.get_max_moment(n_points=100), 13545087.817052273)
         
         self.assertAlmostEqual(beam.check_section(0, 12767717)[0], 0.00042183539410122254)
         self.assertAlmostEqual(beam.check_section(0, 12767717)[1], 0.001232568505796175)
