@@ -189,7 +189,120 @@ class TestSections(unittest.TestCase):
         self.assertAlmostEqual(beam.check_section(0, 12767717)[0], 0.00042183539410122254)
         self.assertAlmostEqual(beam.check_section(0, 12767717)[1], 0.001232568505796175)
         
+class TestFlavioNeto(unittest.TestCase):
+    """
+        The tests in this section are from the book "Concreto Estrutural Avançado - Análise de seções transversais sob flexão normal composta" by Professor Flávio Mendes Neto.
+    """
+    
+    def setUp(self):
+        self.delta = 1e-4
+    
+        self.conc = Concrete(0.85*30e6/1.4)
+        self.steel = SteelIdeal(210e9, 500e6/1.15)
+        self.r = RectSection(0.2, 0.32, self.conc, (0, 0), n_discret=1000)
+        self.s = Section([self.r])
         
+        xy_pairs = [(x,y) for x in [-.07,.07] for y in [-0.11, 0, 0.11]]
+        for xy in xy_pairs:
+            self.s.addSingleRebar(diameter = 0.01,
+                                  material = self.steel,
+                                  position = xy)
+    
+    def get_rebar_normal(self, e0,k):
+        return np.array([s.get_normal_resistance(e0=e0, k=k, center=self.s.centroid[1])
+                           for s in self.s.section if isinstance(s, Rebar) ]).sum()
+    
+    def get_rebar_moment(self, e0,k):                       
+        return np.array([s.get_moment_resistance(e0=e0, k=k, center=self.s.centroid[1])
+                           for s in self.s.section if isinstance(s, Rebar) ]).sum()
+                           
+    def get_rec_normal(self, e0,k):
+        return np.array([s.get_normal_resistance(e0=e0, k=k, center=self.s.centroid[1])
+                           for s in self.s.section if isinstance(s, RectSection) ]).sum()
+    
+    def get_rec_moment(self, e0,k):                       
+        return np.array([s.get_moment_resistance(e0=e0, k=k, center=self.s.centroid[1])
+                           for s in self.s.section if isinstance(s, RectSection) ]).sum()
+    
+    def test_example_3_4(self):
+        # 3.4.1
+        self.assertEqual(self.r.area, 0.064)
+                
+        self.assertAlmostEqual(self.conc.get_stress(-3.5e-3)/1e6, -18.21428, delta=self.delta)
+        self.assertAlmostEqual(self.steel.get_stress(10e-3)/1e6, 434.7826, delta=self.delta)
+        self.assertAlmostEqual(self.steel.yeild_strain, 2.0704e-3)
+        
+        self.assertAlmostEqual(self.s.area_rebar, 4.7123e-4, delta=self.delta)
+        
+        # 3.4.2
+        self.assertAlmostEqual(self.get_rebar_normal(e0=-2e-3, k=0)/1e6, -0.1979, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_normal(e0=-2e-3, k=0)/1e6, -1.1657, delta=self.delta)
+        
+        self.assertAlmostEqual(self.s.get_normal_res(e0=-2e-3, k=0)/1e6, -1.3636, delta=self.delta)
+        self.assertAlmostEqual(self.s.get_moment_res(e0=-2e-3, k=0), 0)
+        
+        # 3.4.3
+        self.assertAlmostEqual(self.s.get_normal_res(e0=10e-3, k=0)/1e6, 0.2049, delta=self.delta)
+        self.assertAlmostEqual(self.s.get_moment_res(e0=10e-3, k=0), 0)
+        
+        # 3.4.4
+        self.assertAlmostEqual(self.get_rebar_normal(e0=-0.1990e-3, k=20.6310e-3)/1e6, -0.0066, delta=self.delta)
+        self.assertAlmostEqual(self.get_rebar_moment(e0=-0.1990e-3, k=20.6310e-3)/1e6, 0.0150, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_normal(e0=-0.1990e-3, k=20.6310e-3)/1e6, -0.5003, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_moment(e0=-0.1990e-3, k=20.6310e-3)/1e6, 0.0447, delta=self.delta)
+        
+        self.assertAlmostEqual(self.s.get_normal_res(e0=-0.1990e-3, k=20.6310e-3)/1e6, -0.5069, delta=self.delta)
+        self.assertAlmostEqual(self.s.get_moment_res(e0=-0.1990e-3, k=20.6310e-3)/1e6, 0.0598, delta=self.delta)
+        
+        # 3.4.5
+        self.assertAlmostEqual(self.get_rebar_normal(e0=-2e-3, k=6.25e-3)/1e6, -0.1776, delta=self.delta)
+        self.assertAlmostEqual(self.get_rebar_moment(e0=-2e-3, k=6.25e-3)/1e6, 0.0028, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_normal(e0=-2e-3, k=6.25e-3)/1e6, -1.1171, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_moment(e0=-2e-3, k=6.25e-3)/1e6, 0.0058, delta=self.delta)
+        
+        self.assertAlmostEqual(self.s.get_normal_res(e0=-2e-3, k=6.25e-3)/1e6, -1.2947, delta=self.delta)
+        self.assertAlmostEqual(self.s.get_moment_res(e0=-2e-3, k=6.25e-3)/1e6, 0.0086, delta=self.delta)
+        
+        # 3.4.6
+        self.assertAlmostEqual(self.get_rebar_normal(e0=-0.5e-3, k=9.3750e-3)/1e6, -0.0495, delta=self.delta)
+        self.assertAlmostEqual(self.get_rebar_moment(e0=-0.5e-3, k=9.3750e-3)/1e6, 0.0075, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_normal(e0=-0.5e-3, k=9.3750e-3)/1e6, -0.5181, delta=self.delta)
+        self.assertAlmostEqual(self.get_rec_moment(e0=-0.5e-3, k=9.3750e-3)/1e6, 0.0414, delta=self.delta)
+        
+        self.assertAlmostEqual(self.s.get_normal_res(e0=-0.5e-3, k=9.3750e-3)/1e6, -0.5676, delta=self.delta)
+        self.assertAlmostEqual(self.s.get_moment_res(e0=-0.5e-3, k=9.3750e-3)/1e6, 0.0489, delta=self.delta)
+        
+    def test_example_4_5(self):
+        self.s.residual_e0 = 1e-8
+        self.s.max_increment_e0 = 0.0005
+        self.s.n_ite_e0 = 3000
+        self.s.tolerance_check_section = 1e-8
+    
+        self.assertAlmostEqual(self.s.check_section(target_normal=-0.8160e6, target_moment=0.0373e6, n_ite=1000), (-0.9027403850211792e-3, 5.985830149126867e-3))
+        
+        self.assertAlmostEqual(self.s.check_section(target_normal=0, target_moment=0.0373e6, n_ite=1000), (None, None))
+        
+        self.assertAlmostEqual(self.s.check_section(target_normal=-1.1657e6, target_moment=0.0373e6, n_ite=1000), (None, None))
+        
+        self.assertAlmostEqual(self.s.check_section(target_normal=-0.8160e6, target_moment=0, n_ite=1000), (-0.7884934594071175e-3, 9.412299199057889e-20))
+        
+        self.assertAlmostEqual(self.s.check_section(target_normal=-0.8160e6, target_moment=-0.0560e6, n_ite=1000), (None, None))
+        
+        self.assertAlmostEqual(self.s.check_section(target_normal=0.1166e6, target_moment=0.0075e6, n_ite=1000), (1.3784131434898693e-3, 9.843707714720228e-3)) #This should be (1.369521e-3, 9.759756e-3)
+        
+        e0=1.369521e-3
+        k=9.759756e-3
+        
+        rebar_normal = self.get_rebar_normal(e0,k)
+        rebar_moment = self.get_rebar_moment(e0,k)
+        
+
+        rec_normal = self.get_rec_normal(e0,k)
+        rec_moment = self.get_rec_moment(e0,k)
+        
+        print(rebar_normal, rebar_moment)
+        print(rec_normal, rec_moment)
+
         
 if __name__ == '__main__':
     unittest.main()
