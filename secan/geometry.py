@@ -264,10 +264,10 @@ class Tendon(Rebar):
                  diameter,
                  material,
                  initial_strain,
-                 position=(0, 0),
+                 center=(0, 0),
                  strain_ULS=10e-3 # Ultimate Limite State
                 ):
-        super().__init__(diameter, material, position)
+        super().__init__(diameter, material, center)
         self.initial_strain = initial_strain
         self.strain_ULS = strain_ULS
 

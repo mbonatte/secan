@@ -11,12 +11,68 @@ class TestMaterials(unittest.TestCase):
         self.assertEqual(c.get_stiff(-1.5e-3), 10.0e9) 
         self.assertEqual(c.get_stress(-1.5e-3), -37.5e6) 
 
-    def test_steel(self):
-        s = SteelIdeal(200e9, 400e6)
+    def test_steel_ideal(self):
+        s = SteelIdeal(young=200e9, fy=400e6)
         self.assertEqual(s.get_stiff(1e-3), 200e9)
         self.assertEqual(s.get_stress(1e-3), 200e6)
         self.assertEqual(s.get_stress(10e-3), 400e6)
         self.assertEqual(s.get_stress(-10e-3), -400e6)
+        
+    def test_steel_hardening(self):
+        s = SteelHardening(young=200e9, fy=400e6, ft=1200e6, ultimate_strain=35e-3)
+        self.assertEqual(s.get_stiff(1e-3), 200e9)
+        self.assertEqual(s.get_stress(1e-3), 200e6)
+        self.assertEqual(s.get_stress(10e-3), 593939393.939394)
+        self.assertEqual(s.get_stress(25e-3), 957575757.5757575)
+        self.assertEqual(s.get_stress(-10e-3), -400e6)
+
+
+class TestGeometries(unittest.TestCase):
+
+    def test_rectangle(self):
+        concrete = Concrete(40e6)
+        rect = RectSection(width     = 0.2,
+                           height    = 0.6,
+                           material  = concrete,
+                           center    = (0, 0.3),
+                           rotation  = 0,
+                           n_discret = 200
+                           )
+        
+        self.assertEqual(rect.area, 0.12) 
+        self.assertEqual(rect.boundary, [(-0.1, 0.0), (0.1, 0.6)]) 
+        
+        self.assertEqual(rect.get_normal_resistance(e0=0.001, k=0.02, center=0.3), -1133312.9999999998)
+        self.assertEqual(rect.get_normal_resistance(e0=0.001, k=0.02, center=0), -1133313.0)
+        
+        self.assertEqual(rect.get_moment_resistance(e0=0.001, k=0.02, center=0.3), 172496.04929999996)
+        self.assertEqual(rect.get_moment_resistance(e0=0.001, k=0.02, center=0), 172496.04929999998)
+
+    def test_rebar(self):
+        steel = SteelIdeal(200e9, 400e6)
+        rebar = Rebar(diameter=0.012, material=steel, center=(0.1, -0.2))
+        
+        self.assertEqual(rebar.area, 0.00011309733552923255) 
+        self.assertEqual(rebar.boundary, [(0.1, -0.2)]) 
+        
+        self.assertEqual(rebar.get_normal_resistance(e0=0.0001, k=0.002, center=0.3), 24881.413816431163)
+        self.assertEqual(rebar.get_normal_resistance(e0=0.001, k=0.02, center=0), 45238.93421169302)
+        
+        self.assertEqual(rebar.get_moment_resistance(e0=0.0001, k=0.002, center=0.3), 12440.706908215581)
+        self.assertEqual(rebar.get_moment_resistance(e0=0.001, k=0.02, center=0),  9047.786842338604)
+        
+    def test_tendon(self):
+        steel = SteelHardening(young=200e9, fy=400e6, ft=1200e6, ultimate_strain=35e-3)
+        tendon = Tendon(diameter=0.012, material=steel, initial_strain=1e-3, center=(0.1, -0.2), strain_ULS=10e-3)
+        
+        self.assertEqual(tendon.area, 0.00011309733552923255) 
+        self.assertEqual(tendon.boundary, [(0.1, -0.2)]) 
+        
+        self.assertEqual(tendon.get_normal_resistance(e0=0.0001, k=0.002, center=0.3), 45513.109570551766)
+        self.assertEqual(tendon.get_normal_resistance(e0=0.001, k=0.02, center=0), 56205.94856604285)
+        
+        self.assertEqual(tendon.get_moment_resistance(e0=0.0001, k=0.002, center=0.3), 22756.554785275883)
+        self.assertEqual(tendon.get_moment_resistance(e0=0.001, k=0.02, center=0), 11241.18971320857)
         
 class TestSections(unittest.TestCase):
     
