@@ -1,3 +1,5 @@
+[![unittest](https://github.com/mbonatte/secan/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/mbonatte/secan/actions/workflows/python-app.yml)
+
 # SecAn - Section Analysis
 <i>Section Analysis</i> is a module that enables the modelling and analysis of custom cross-sections. <i>Section Analysis</i> is helpful for the evaluation of section properties and nonlinear response.
 
