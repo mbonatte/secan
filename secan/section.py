@@ -58,7 +58,6 @@ class Section:
     def get_stiff(self, e0: float, k: float) -> np.ndarray:
         K = np.array([s.get_stiffness(e0, k, self.centroid[1]) for s in self.section])
         return K.sum(axis=0)
-        
 
     def get_e0(self, k=0, e0=0, target_normal=0):
         for _ in range(self.n_ite_e0):
@@ -88,17 +87,21 @@ class Section:
             
             residual = np.array([[target_normal-normal],
                                 [target_moment-moment]])
+            
             if np.linalg.norm(residual) < self.tolerance_check_section:
                 return e0, k
             
             stiff = self.get_stiff(e0, k)
+            
             if np.linalg.det(stiff) < self.tolerance_check_section:
                 break
 
             # update section state
             inv_stiff = np.linalg.inv(stiff)
+
             e0 += np.matmul(inv_stiff, residual )[0][0]
             k += np.matmul(inv_stiff, residual )[1][0]
+        
         return None, None
 
     def get_strain_base_top(self, f, inverted=False):

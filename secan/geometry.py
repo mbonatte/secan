@@ -6,37 +6,120 @@ from math import pi
 from abc import ABC, abstractmethod
 
 
+from abc import ABC, abstractmethod
+from typing import List, Tuple
+
 class Geometry(ABC):
+    """
+    Abstract base class representing a geometry.
+
+    Attributes:
+        None
+
+    Methods:
+        area -> float: Abstract property to get the area of the geometry.
+        boundary -> List[Tuple[float, float]]: Abstract property to get the boundary coordinates of the geometry.
+        get_normal_resistance(e0: float, k: float, center: float) -> np.ndarray: Abstract method to calculate normal resistance.
+        get_moment_resistance(e0: float, k: float, center: float) -> np.ndarray: Abstract method to calculate moment resistance.
+        get_stiffness(e0: float, k: float, center: float) -> np.ndarray: Abstract method to calculate stiffness.
+        set_material(material): Set the material for the geometry.
+        plot_geometry(graph): Method to plot the geometry (default implementation prints a message).
+        set_x_plot(graph, value): Method to set x-axis limits of a plot (adjusting with value).
+    """
 
     @property
     @abstractmethod
     def area(self) -> float:
+        """
+        Get the area of the geometry.
+
+        Returns:
+            float: Area of the geometry.
+        """
         pass
         
     @property
     @abstractmethod
-    def boundary(self) -> List[tuple[float, float]]:
+    def boundary(self) -> List[Tuple[float, float]]:
+        """
+        Get the boundary coordinates of the geometry.
+
+        Returns:
+            List[Tuple[float, float]]: List of boundary coordinates as tuples.
+        """
         pass
 
     @abstractmethod
     def get_normal_resistance(self, e0: float, k: float, center: float) -> np.ndarray:
+        """
+        Calculate normal resistance based on the given parameters.
+
+        Args:
+            e0 (float): Normal strain value.
+            k (float): Curvature value.
+            center (float): Center value.
+
+        Returns:
+            np.ndarray: Array of normal resistance values.
+        """
         pass
 
     @abstractmethod
     def get_moment_resistance(self, e0: float, k: float, center: float) -> np.ndarray:
+        """
+        Calculate moment resistance based on the given parameters.
+
+        Args:
+            e0 (float): Normal strain value.
+            k (float): Curvature value.
+            center (float): Center value.
+
+        Returns:
+            np.ndarray: Array of moment resistance values.
+        """
         pass
 
     @abstractmethod
     def get_stiffness(self, e0: float, k: float, center: float) -> np.ndarray:
+        """
+        Calculate stiffness based on the given parameters.
+
+        Args:
+            e0 (float): Normal strain value.
+            k (float): Curvature value.
+            center (float): Center value.
+
+        Returns:
+            np.ndarray: Array of stiffness values.
+        """
         pass
 
-    def set_material(self, material):
+    def set_material(self, material) -> None:
+        """
+        Set the material for the geometry.
+
+        Args:
+            material: Material instance to be set for the geometry.
+        """
         self.material = material
 
-    def plot_geometry(self, graph):
+    def plot_geometry(self, graph: object) -> None:
+        """
+        Plot the geometry (default implementation prints a message).
+
+        Args:
+            graph (object): Plotting object (e.g., Matplotlib axis).
+        """
         print("Plot is not implemented for this section")
 
-    def set_x_plot(self, graph, value):
+    def set_x_plot(self, graph: object, value: float) -> None:
+        """
+        Set x-axis limits of a plot (adjusting with value).
+
+        Args:
+            graph (object): Plotting object (e.g., Matplotlib axis).
+            value (float): Value used to adjust x-axis limits.
+        """
         xabs_max = abs(max(graph.get_xlim(), key=abs))
         value *= 1.05
         if value > xabs_max:
@@ -45,10 +128,26 @@ class Geometry(ABC):
             graph.set_xlim(xmin=-xabs_max, xmax=xabs_max)
 
 
+
 class RectSection(Geometry):
+    """
+    Rectangle section geometry class.
+    """
+
     def __init__(self, width: float, height: float, material,
-                 center: tuple[float, float]=(0, 0),
+                 center: tuple[float, float] = (0, 0),
                  rotation=0, n_discret=200):
+        """
+        Initialize the RectSection geometry.
+
+        Args:
+            width (float): Width of the rectangle.
+            height (float): Height of the rectangle.
+            material: Material instance for the geometry.
+            center (tuple[float, float]): Center coordinates of the rectangle.
+            rotation: Rotation of the rectangle (not used).
+            n_discret (int): Number of discretization points.
+        """
         self._width = width
         self._height = height
         self.center = np.array(center)
@@ -93,50 +192,56 @@ class RectSection(Geometry):
     def get_area(self):
         return self.width*self.height
 
-    def get_strain(self, e0=0, k=0, pos=0):
-        return e0+k*(self.self.height/2-pos)
-
     def get_strains(self, e0: float, k: float) -> np.ndarray:
+        """
+        Calculate strains based on normal strain and curvature.
+
+        Args:
+            e0 (float): Normal strain value.
+            k (float): Curvature value.
+
+        Returns:
+            np.ndarray: Array of calculated strains.
+        """
         return e0 + k * (self.height/2 - self.h_discret) 
-        
-    def get_stress(self, e0: float, k: float, center: float) -> np.ndarray:
-        strains = self.get_strain(e0, k)
-        return self.material.get_stress(strains)
 
     def get_e0_sec(self, e0, k, center):
+        """
+        Calculate normal strain of the section based on the normal strain, curvature and center of the main section.
+
+        Args:
+            e0: Normal strain value.
+            k: Curvature value.
+            center: Center of the main section.
+
+        Returns:
+            float: Calculated e0_sec.
+        """
         return e0 + k * (center - self.center[1])
 
     def get_normal_resistance_discrete(self, e0, k, center):
         e0_sec = self.get_e0_sec(e0, k, center)
         strains = self.get_strains(e0_sec, k)
-        normal = map(self.material.get_stress,strains)
-        normal = np.fromiter(normal, dtype=float)
+        normal = self.material.get_stress(strains)
         return normal * self.area_discret
 
     def get_normal_resistance(self, e0, k, center):
-        return sum(self.get_normal_resistance_discrete(e0, k, center))
+        return np.sum(self.get_normal_resistance_discrete(e0, k, center))
 
     def get_moment_resistance(self, e0, k, center):
         normal = self.get_normal_resistance_discrete(e0, k, center)
-        #dist = (center-self.center[1])+(self.center[1]-self.h_discret)
-        dist = (center-self.center[1])+(self._height/2-self.h_discret)
-        #print(self._height/2, self.center[1])
-        return sum(normal * dist)
+        dist = (center - self.center[1]) + (self._height / 2 - self.h_discret)
+        return np.sum(normal * dist)
 
     def get_normal_stiff_discrete(self, e0, k, center):
         e0_sec = self.get_e0_sec(e0, k, center)
         strains = self.get_strains(e0_sec, k)
-        
-        normal = np.array([
-            self.material.get_stiff(strain) for strain in strains
-        ])
+        normal = self.material.get_stiff(strains)
         return normal * self.area_discret
     
     def get_stiffness(self, e0: float, k: float, 
-                      center: float) -> np.ndarray:
-                      
+                      center: float) -> np.ndarray:   
         normal = self.get_normal_stiff_discrete(e0, k, center)
-        #dist = (center-self.center[1]) + (self.center[1]-self.h_discret)
         dist = (center-self.center[1])+(self._height/2-self.h_discret)
         
         a00 = normal.sum()
@@ -175,6 +280,12 @@ class RectSection(Geometry):
         self.set_x_plot(graph, abs(max(strain, key=abs)))
 
     def plot_geometry(self, graph=None):
+        """
+        Plot the rectangle geometry.
+
+        Args:
+            graph: Matplotlib axis to plot the geometry.
+        """
         if graph is None:
             fig, graph = plt.subplots(1, figsize=(10, 10))
         graph.add_patch(Rectangle(self.boundary[0],
@@ -186,7 +297,7 @@ class RectSection(Geometry):
 
 class Rebar(Geometry):
     def __init__(self, diameter, material, center=(0, 0)):
-        self._diameter = diameter
+        self.diameter = diameter
         self._area = pi * diameter**2 / 4
         self.material = material
         self.center = np.array(center)
@@ -211,7 +322,7 @@ class Rebar(Geometry):
     def area(self, new_area):
         if (new_area >= 0):
             self._area = new_area
-            self._diameter = (new_area*4/3.141592)**0.5
+            self._diameter = (new_area*4/pi)**0.5
         else:
             raise Exception("Area must be higher than 0")
     

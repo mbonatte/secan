@@ -26,7 +26,6 @@ class TestMaterials(unittest.TestCase):
         self.assertEqual(s.get_stress(25e-3), 957575757.5757575)
         self.assertEqual(s.get_stress(-10e-3), -400e6)
 
-
 class TestGeometries(unittest.TestCase):
 
     def test_rectangle(self):
@@ -46,7 +45,7 @@ class TestGeometries(unittest.TestCase):
         self.assertEqual(rect.get_normal_resistance(e0=0.001, k=0.02, center=0), -1133313.0)
         
         self.assertEqual(rect.get_moment_resistance(e0=0.001, k=0.02, center=0.3), 172496.04929999996)
-        self.assertEqual(rect.get_moment_resistance(e0=0.001, k=0.02, center=0), 172496.04929999998)
+        self.assertEqual(rect.get_moment_resistance(e0=0.001, k=0.02, center=0), 172496.04929999996)
 
     def test_rebar(self):
         steel = SteelIdeal(200e9, 400e6)
@@ -238,7 +237,7 @@ class TestFlavioNeto(unittest.TestCase):
                 
         self.assertAlmostEqual(self.conc.get_stress(-3.5e-3)/1e6, -18.21428, delta=self.delta)
         self.assertAlmostEqual(self.steel.get_stress(10e-3)/1e6, 434.7826, delta=self.delta)
-        self.assertAlmostEqual(self.steel.yeild_strain, 2.0704e-3)
+        self.assertAlmostEqual(self.steel.yield_strain, 2.0704e-3)
         
         self.assertAlmostEqual(self.s.area_rebar, 4.7123e-4, delta=self.delta)
         
@@ -351,6 +350,5 @@ class TestFlavioNeto(unittest.TestCase):
         self.assertAlmostEqual(rec_stiff[0][1]/1e9, -0.0102, delta=0.0004) ######
         self.assertAlmostEqual(rec_stiff[1][1]/1e8, 0.0154, delta=0.0004) ######
 
-        
 if __name__ == '__main__':
     unittest.main()
