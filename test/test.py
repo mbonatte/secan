@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-from ..section import Section
-from ..material import Concrete, SteelIdeal, SteelHardening
-from ..geometry import RectSection, Rebar, Tendon
+from secan.section import Section
+from secan.material import Concrete, SteelIdeal, SteelHardening
+from secan.geometry import RectSection, Rebar, Tendon
 
 class TestMaterials(unittest.TestCase):
 

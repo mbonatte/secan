@@ -19,7 +19,7 @@ class Material(ABC):
     @abstractmethod
     def get_stiff(self, strain: float) -> float:
         """
-        Calculate material stiffness based on the given strain.
+        Calculate material tangent stiffness based for a given strain.
 
         Args:
             strain (float): Strain value.
@@ -32,7 +32,7 @@ class Material(ABC):
     @abstractmethod
     def get_stress(self, strain: float) -> float:
         """
-        Calculate material stress based on the given strain.
+        Calculate material stress for a given strain.
 
         Args:
             strain (float): Strain value.
@@ -44,7 +44,7 @@ class Material(ABC):
 
     def plot(self, plot=None):
         """
-        Plot the material (default implementation prints a message).
+        Plot the material stress/strain relationship (default implementation prints a message).
 
         Args:
             plot (object): Plotting object (optional).
