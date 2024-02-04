@@ -219,7 +219,6 @@ class Section:
         print('Normal = ', self.get_normal_res(e0, k))
         print('Moment = ', self.get_moment_res(e0, k))
         
-
     def plot_stress(self, e0, k, graph=None):
         if graph is None:
             fig, graph = plt.subplots(1, figsize=(10, 10))
@@ -306,17 +305,15 @@ class Section:
         bound = self.get_section_boundary()
         return bound[1][1]-bound[0][1]
 
-    def plot_interaction_curve(self, n_points=100):
-        fig, graph = plt.subplots(figsize=(5, 5))
-        graph.grid()
-        graph.set_title("Interaction curve")
-        graph.set(xlabel='Normal')
-        graph.set(ylabel='Moment')
-        failure = [i/n_points for i in range(n_points+1)]
+    def get_interaction_curve(self, n_points=100):
         height = self.get_section_height()
         bottom = self.get_section_boundary()[0][1]
+        
         nu = []
         mu = []
+        
+        failure = [i/n_points for i in range(n_points+1)]
+        
         for i in range(2):
             for f in failure:
                 if(f < 1/3):
@@ -338,4 +335,18 @@ class Section:
                 moment = self.get_moment_res(e0, k)
                 nu.append(normal)
                 mu.append(moment)
+        
+        return nu, mu
+    
+    def plot_interaction_curve(self, n_points=100, graph=None):
+        if graph is None:
+            fig, graph = plt.subplots(1, figsize=(5, 5))
+        
+        nu, mu = self.get_interaction_curve()
+        
         graph.plot(nu, mu, color='b')
+        
+        graph.grid()
+        graph.set_title("Interaction curve")
+        graph.set(xlabel='Normal')
+        graph.set(ylabel='Moment')
