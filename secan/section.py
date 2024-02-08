@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from . import geometry
-
+from .exceptions import SectionUnstableError, ConvergenceError
 
 class Section:
 
@@ -69,13 +69,13 @@ class Section:
         
             stiff = self.get_stiff(e0, k)[0, 0]
             if stiff < 1e-10:
-                raise ZeroDivisionError
+                raise SectionUnstableError
             
             increment = (target_normal - normal_int)/stiff
             
             e0 += np.sign(increment) * min(abs(increment), self.max_increment_e0)
         
-        return None
+        raise ConvergenceError
 
     def check_section(self, target_normal, target_moment, n_ite=10):
         e0 = 0
@@ -94,7 +94,7 @@ class Section:
             stiff = self.get_stiff(e0, k)
             
             if np.linalg.det(stiff) < self.tolerance_check_section:
-                break
+                raise SectionUnstableError
 
             # update section state
             inv_stiff = np.linalg.inv(stiff)
@@ -102,7 +102,7 @@ class Section:
             e0 += np.matmul(inv_stiff, residual )[0][0]
             k += np.matmul(inv_stiff, residual )[1][0]
         
-        return None, None
+        raise ConvergenceError
 
     def get_strain_base_top(self, f, inverted=False):
         if f <= 0.5:
@@ -138,7 +138,7 @@ class Section:
         
         try:
             e0_start = self.get_e0(min_curvature, e0_start)
-        except ZeroDivisionError:
+        except (SectionUnstableError, ConvergenceError):
              e0_start = 0
         
         for j in range(n_points):
@@ -149,7 +149,7 @@ class Section:
           try:
               e0 = self.get_e0(curvature, e0_start)
               moment = self.get_moment_res(e0, curvature)
-          except ZeroDivisionError:
+          except (SectionUnstableError, ConvergenceError):
                 moment = 0
           
           # Update curvature bounds          
@@ -193,7 +193,7 @@ class Section:
             try:
                 e0 = self.get_e0(k[i], e0, normal_force)
                 moment[i] = self.get_moment_res(e0, k[i])
-            except ZeroDivisionError:
+            except (SectionUnstableError, ConvergenceError):
                 moment[i] = 0
         return k, moment
 
