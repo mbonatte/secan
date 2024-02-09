@@ -391,7 +391,8 @@ class Tendon(Rebar):
     def get_stiffness(self, e0, k, center):
         strain = e0 + k * (center - self.center[1])
         if strain > self.strain_ULS:
-            return 0
+            return np.array(([0, 0],
+                             [0, 0]))
         strain += self.initial_strain  #This still has to be tested
         normal = self.area * self.material.get_stiff(strain)
         dist = (center-self.center[1])
