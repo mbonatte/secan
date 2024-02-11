@@ -365,6 +365,8 @@ class SteelHardening(SteelIdeal):
             return self.young
         elif self.yield_strain < strain < self.ultimate_strain:
             return self.hardening_stiffness
+        elif self.yield_strain > strain > -self.ultimate_strain:
+            return self.hardening_stiffness
         else:
             return 0
 
@@ -383,7 +385,7 @@ class SteelHardening(SteelIdeal):
         elif self.yield_strain < strain < self.ultimate_strain:
             return self.fy + (strain - self.yield_strain) * self.hardening_stiffness
         elif (-self.ultimate_strain <= strain <= -self.yield_strain):
-            return self.fy * strain / abs(strain)
+            return -self.fy + (strain + self.yield_strain) * self.hardening_stiffness
         else:
             return 0
 
