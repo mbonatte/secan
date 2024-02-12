@@ -74,15 +74,26 @@ class Linear(Material):
 
     def get_stiff(self, strain=0):
         """
-        Calculate material stiffness based on the given strain.
+        Calculate and return the material stiffness based on the Young's modulus. 
+        This function is simplified to return the Young's modulus directly, 
+        but is designed to handle both scalar and array inputs for strain, 
+        returning a uniform stiffness value.
 
         Args:
-            strain (float): Strain value.
+            strain (float or list or np.ndarray): Strain value(s), can be a scalar, list, or numpy array.
 
         Returns:
-            float: Material stiffness.
+            float or np.ndarray: Material stiffness, which is the Young's modulus for any given strain.
         """
-        return self.young
+        # Check if 'strain' is a list or numpy array and ensure output matches the input type
+        if isinstance(strain, (list, np.ndarray)):
+            # If 'strain' is a list or numpy array, return an array of 'self.young' with the same length
+            stiffness = np.full_like(strain, self.young, dtype=float)
+        else:
+            # If 'strain' is a scalar, simply return 'self.young'
+            stiffness = self.young
+        
+        return stiffness
 
     def get_stress(self, strain=0):
         """
@@ -256,10 +267,17 @@ class SteelIdeal(Material):
         Returns:
             float: Material stiffness.
         """
-        if (-self.yield_strain <= strain <= self.yield_strain):
-            return self.young
-        else:
-            return 0
+        # Convert strain to a numpy array if it is not already one
+        strain_array = np.asarray(strain)
+        
+        # Check if the strain is within the yield strain limits
+        condition = (-self.yield_strain <= strain_array) & (strain_array <= self.yield_strain)
+        
+        # Use numpy.where for vectorized condition checking
+        stiff = np.where(condition, self.young, 0)
+        
+        # If the input was a scalar, return a scalar; if it was an array, return an array
+        return stiff if isinstance(strain, np.ndarray) else stiff.item()
 
     def get_stress(self, strain: float = 0) -> float:
         """
@@ -271,12 +289,19 @@ class SteelIdeal(Material):
         Returns:
             float: Material stress.
         """
-        if (-self.yield_strain <= strain <= self.yield_strain):
-            return self.young*strain
-        elif (-self.ultimate_strain <= strain <= self.ultimate_strain):
-            return self.fy * strain/abs(strain)
-        else:
-            return 0
+        condition1 = (-self.yield_strain <= strain <= self.yield_strain)
+        condition2 = (-self.ultimate_strain <= strain <= self.ultimate_strain)
+        
+        result1 = self.young*strain
+        result2 = self.fy * strain/abs(strain)
+        
+        stress = np.select(
+            [condition1, condition2],
+            [result1, result2],
+            default=0
+        )
+        
+        return stress
 
     def plot(self, graph=None) -> None:
         """
