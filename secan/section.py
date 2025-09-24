@@ -7,15 +7,18 @@ from .exceptions import SectionUnstableError, ConvergenceError
 
 class Section:
 
-    def __init__(self, section: List[geometry.Geometry]=None):
+    def __init__(self, section: List[geometry.Geometry]=None, *,
+                 include_rebar_in_centroid: bool = True):
         self.area_rebar = 0
         self.centroid_rebar = 0
         self.centroid = (0, 0)
+        self.include_rebar_in_centroid = include_rebar_in_centroid
+        
         if (section is None):
             self.section = []
         else:
             self.section = section
-            self.centroid = self._compute_centroid()
+            self._compute_centroid()
         
         self.residual_e0 = 10
         self.max_increment_e0 = 0.0005
@@ -24,14 +27,31 @@ class Section:
         self.tolerance_check_section = 0.01
 
     def _compute_centroid(self) -> None:
-        areas = np.array([s.area for s in self.section])
-        stiffnesses = np.array([s.material.get_stiff() for s in self.section])
+        # --- choose which parts to include in centroid ---
+        elems = self.section if self.include_rebar_in_centroid else [
+            s for s in self.section if not isinstance(s, geometry.Rebar)
+        ]
+
+        if len(elems) == 0:
+            # nothing to compute; keep centroid at origin
+            self.centroid = np.array([0.0, 0.0])
+            self.set_rebar_centroid()
+            return
+
+        areas = np.array([s.area for s in elems])
+        stiffnesses = np.array([s.material.get_stiff() for s in elems])
         weighted_areas = areas * stiffnesses
+
+        weighted_areas_sum = np.sum(weighted_areas)
+
+        if abs(weighted_areas_sum) < 1e-12:
+            # avoid division by zero; fallback to (0,0)
+            self.centroid = np.array([0.0, 0.0])
+        else:
+            cx = np.sum(weighted_areas * [s.center[0] for s in elems]) / weighted_areas_sum
+            cy = np.sum(weighted_areas * [s.center[1] for s in elems]) / weighted_areas_sum
+            self.centroid = np.array([cx, cy])
         
-        cx = np.sum(weighted_areas * [s.center[0] for s in self.section]) / np.sum(weighted_areas)
-        cy = np.sum(weighted_areas * [s.center[1] for s in self.section]) / np.sum(weighted_areas)
-    
-        self.centroid = np.array([cx, cy])
         self.set_rebar_centroid()
 
     def set_rebar_centroid(self):

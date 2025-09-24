@@ -34,6 +34,11 @@ class TestSections(unittest.TestCase):
         
         s.plot_stress_strain(0.0025, 0.00588)
         s.plot_section()
+
+        s.include_rebar_in_centroid = False
+        s._compute_centroid()
+        self.assertAlmostEqual(s.centroid[1], 0.25)
+
         
     def test_big_section(self):
         web_40x160_left = RectSection(width=0.4,
